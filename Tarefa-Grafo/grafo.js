@@ -1,6 +1,6 @@
 let request = require('request')
 
-request('http://webmathias-com-br.umbler.net/api/cities', (error, resp, body) => {
+request('http://webmathias-com-br.umbler.net/api/cities?seed=2&cities=10', (error, resp, body) => {
     data = JSON.parse(body);
     // console.log(data);
     let aPercorrer = [{
@@ -8,11 +8,12 @@ request('http://webmathias-com-br.umbler.net/api/cities', (error, resp, body) =>
         percorridos: [],
         custo: 0
     }];
-    let menorDestino = {};
+    let menorDestino = false;
     let destine = data.cities[0];
-
+    let passo = 0;
     while (aPercorrer.length > 0) {
         // let atual = aPercorrer.pop();
+        passo++;
         let atual = aPercorrer[0];
         let filhos = data.roads.filter(c => c.cityA == atual.nome || c.cityB == atual.nome);
 
@@ -25,29 +26,33 @@ request('http://webmathias-com-br.umbler.net/api/cities', (error, resp, body) =>
             if (atual.percorridos.find(_filho => _filho == filho.cityA || _filho == filho.cityB)) {
 
                 let tenhaCalmaMathias = filho.cityA === atual.nome ? filho.cityB : filho.cityA
-                
+
                 let _atual = {
-                    ...atual, 
-                    percorridos: [...atual.percorridos,atual.nome],
+                    ...atual,
+                    percorridos: [...atual.percorridos, atual.nome],
                     custo: atual.custo + filho.distance
                 };
 
                 if (tenhaCalmaMathias == destine && _atual.percorridos.length === data.cities.length) {
 
-                    menorDestino = {
-                        percorridos: _atual.percorridos,
-                        custo: _atual.custo
+                    if (!menorDestino || menorDestino.custo > _atual.custo) {
+
+                        menorDestino = {
+                            percorridos: _atual.percorridos,
+                            custo: _atual.custo
+                        }
+                        console.log("Cheguei ao destino Mathias: ", menorDestino);
+
                     }
-                    
-                    console.log("Cheguei ao destino Mathias: ", menorDestino);
+
                     continue
                 }
-                console.log('Não adiciona, já percorreu por:', tenhaCalmaMathias, "Percorrido: ", atual.percorridos.length);
+                // console.log('Não adiciona, já percorreu por:', tenhaCalmaMathias, "Percorrido: ", atual.percorridos.length);
                 continue;
             }
-            if (menorDestino && atual.custo + filho.custo > menorDestino.custo) {
-                console.log('** - Já tem um caminho mais curto, não olhar mais por aqui: ' + (atual.custo + filho.custo) + " > " + menorDestino.custo + ' >> ' + atual.nome + ' >> ' + filho.destino);
-                continue;
+            if (menorDestino && atual.custo + filho.distance > menorDestino.custo) {
+                // console.log('** - Já tem um caminho mais curto, não olhar mais por aqui: ', filho);
+                // continue;
             }
             aPercorrer.push({
                 nome: filho.cityA === atual.nome ? filho.cityB : filho.cityA,
@@ -56,5 +61,6 @@ request('http://webmathias-com-br.umbler.net/api/cities', (error, resp, body) =>
             })
         }
     }
+    console.log('passos: ', passo);
 })
 
